@@ -2,6 +2,8 @@
 using Hangfire.Logging;
 using System;
 using System.Data;
+using System.IO;
+using System.Reflection;
 
 namespace Hangfire.Oracle.Core
 {
@@ -21,6 +23,46 @@ namespace Hangfire.Oracle.Core
 
             Log.Info("Start installing Hangfire SQL objects...");
 
+            try
+            {
+                InstallationFromFile(connection);
+            }
+            catch (Exception ex)
+            {
+                InstallationFromCode(connection);
+                Log.ErrorException(ex.Message, ex);
+            }
+
+            Log.Info("Hangfire SQL objects installed.");
+        }
+
+        private static void InstallationFromFile(IDbConnection connection)
+        {
+            var script = GetStringResource("Hangfire.Oracle.Core.Install.sql");
+            var scripts = script.Split(new string[] { ";" }, StringSplitOptions.RemoveEmptyEntries);
+
+            using (var scope = BeginTransactionScope())
+            {
+                try
+                {
+                    foreach (var sql in scripts)
+                    {
+                        connection.Execute(sql);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Log.ErrorException("Hangfire SQL error.", ex);
+                    throw;
+                }
+
+                // Complete the transaction scope if all commands succeed
+                scope.Complete();
+            }
+        }
+
+        private static void InstallationFromCode(IDbConnection connection)
+        {
             using (var scope = BeginTransactionScope())
             {
                 try
@@ -55,14 +97,12 @@ namespace Hangfire.Oracle.Core
                     // Complete the transaction scope if all commands succeed
                     scope.Complete();
                 }
-                catch (Exception err)
+                catch (Exception ex)
                 {
-                    Log.Error(err.Message);
+                    Log.ErrorException(ex.Message, ex);
                     throw;
                 }
             }
-
-            Log.Info("Hangfire SQL objects installed.");
         }
 
         private static bool TablesExists(IDbConnection connection, string schemaName)
@@ -73,6 +113,28 @@ namespace Hangfire.Oracle.Core
     WHERE OWNER = '{schemaName}' AND TABLE_NAME LIKE 'HF_%'
  ORDER BY TABLE_NAME
 ") != null;
+        }
+
+        private static string GetStringResource(string resourceName)
+        {
+#if NET45
+            var assembly = typeof(OracleObjectsInstaller).Assembly;
+#else
+            var assembly = typeof(OracleObjectsInstaller).GetTypeInfo().Assembly;
+#endif
+
+            using (var stream = assembly.GetManifestResourceStream(resourceName))
+            {
+                if (stream == null)
+                {
+                    throw new InvalidOperationException($"Requested resource `{resourceName}` was not found in the assembly `{assembly}`.");
+                }
+
+                using (var reader = new StreamReader(stream))
+                {
+                    return reader.ReadToEnd();
+                }
+            }
         }
 
         private static System.Transactions.TransactionScope BeginTransactionScope()
