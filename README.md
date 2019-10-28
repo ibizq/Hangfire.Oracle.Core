@@ -85,7 +85,7 @@ More info: [Hangfire Overview](http://hangfire.io/overview.html#integrated-monit
 ## Build
 Please use Visual Studio or any other tool of your choice to build the solution.
 
-<strike>## Known Issues</strike>
+## Known Issues
 <strike>Currently Install.sql is not deployed if DB objects are not existing. As a workaround run your scripts in database and give CRUD grants to the user that is given in connection string.</strike>
 
 ## Fixed
