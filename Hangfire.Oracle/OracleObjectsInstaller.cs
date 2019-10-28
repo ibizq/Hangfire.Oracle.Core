@@ -15,7 +15,8 @@ namespace Hangfire.Oracle.Core
         {
             if (connection == null) throw new ArgumentNullException(nameof(connection));
 
-            if (TablesExists(connection, schemaName))
+            if (TablesExists(connection, schemaName)
+                && SequencesExists(connection, schemaName))
             {
                 Log.Info("DB tables already exist. Exit install");
                 return;
@@ -25,21 +26,23 @@ namespace Hangfire.Oracle.Core
 
             try
             {
-                InstallationFromFile(connection);
+                InstallFromSqlFile(connection);
             }
             catch (Exception ex)
             {
-                InstallationFromCode(connection);
+                DropFromSqlFile(connection);
+                InstallFromSqlCommands(connection);
+
                 Log.ErrorException(ex.Message, ex);
             }
 
             Log.Info("Hangfire SQL objects installed.");
         }
 
-        private static void InstallationFromFile(IDbConnection connection)
+        private static void DropFromSqlFile(IDbConnection connection)
         {
-            var script = GetStringResource("Hangfire.Oracle.Core.Install.sql");
-            var scripts = script.Split(new string[] { ";" }, StringSplitOptions.RemoveEmptyEntries);
+            var script = GetStringResource("Hangfire.Oracle.Core.Drop.sql");
+            var scripts = script.Split(new[] { ";" }, StringSplitOptions.RemoveEmptyEntries);
 
             using (var scope = BeginTransactionScope())
             {
@@ -61,7 +64,57 @@ namespace Hangfire.Oracle.Core
             }
         }
 
-        private static void InstallationFromCode(IDbConnection connection)
+        private static void TruncateFromSqlFile(IDbConnection connection)
+        {
+            var script = GetStringResource("Hangfire.Oracle.Core.Truncate.sql");
+            var scripts = script.Split(new[] { ";" }, StringSplitOptions.RemoveEmptyEntries);
+
+            using (var scope = BeginTransactionScope())
+            {
+                try
+                {
+                    foreach (var sql in scripts)
+                    {
+                        connection.Execute(sql);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Log.ErrorException("Hangfire SQL error.", ex);
+                    throw;
+                }
+
+                // Complete the transaction scope if all commands succeed
+                scope.Complete();
+            }
+        }
+
+        private static void InstallFromSqlFile(IDbConnection connection)
+        {
+            var script = GetStringResource("Hangfire.Oracle.Core.Install.sql");
+            var scripts = script.Split(new[] { ";" }, StringSplitOptions.RemoveEmptyEntries);
+
+            using (var scope = BeginTransactionScope())
+            {
+                try
+                {
+                    foreach (var sql in scripts)
+                    {
+                        connection.Execute(sql);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Log.ErrorException("Hangfire SQL error.", ex);
+                    throw;
+                }
+
+                // Complete the transaction scope if all commands succeed
+                scope.Complete();
+            }
+        }
+
+        private static void InstallFromSqlCommands(IDbConnection connection)
         {
             using (var scope = BeginTransactionScope())
             {
@@ -107,12 +160,12 @@ namespace Hangfire.Oracle.Core
 
         private static bool TablesExists(IDbConnection connection, string schemaName)
         {
-            return connection.ExecuteScalar<string>($@"
-   SELECT TABLE_NAME
-     FROM all_tables
-    WHERE OWNER = '{schemaName}' AND TABLE_NAME LIKE 'HF_%'
- ORDER BY TABLE_NAME
-") != null;
+            return connection.ExecuteScalar<string>($@" SELECT TABLE_NAME FROM all_tables WHERE OWNER = '{schemaName}' AND TABLE_NAME LIKE 'HF_%' ORDER BY TABLE_NAME ") != null;
+        }
+
+        private static bool SequencesExists(IDbConnection connection, string schemaName)
+        {
+            return connection.ExecuteScalar<string>($@" SELECT SEQUENCE_NAME FROM all_sequences WHERE SEQUENCE_OWNER = '{schemaName}' AND SEQUENCE_NAME LIKE 'HF_%' ORDER BY SEQUENCE_NAME ") != null;
         }
 
         private static string GetStringResource(string resourceName)

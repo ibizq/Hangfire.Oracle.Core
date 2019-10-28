@@ -21,10 +21,14 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <None Remove="Drop.sql" />
     <None Remove="Install.sql" />
+    <None Remove="Truncate.sql" />
   </ItemGroup>
   <ItemGroup>
+    <EmbeddedResource Include="Drop.sql" />
     <EmbeddedResource Include="Install.sql" />
+    <EmbeddedResource Include="Truncate.sql" />
   </ItemGroup>
 
   <ItemGroup>

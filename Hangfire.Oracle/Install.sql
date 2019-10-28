@@ -1,72 +1,6 @@
-﻿-- ----------------------------
--- TRUNCATE TABLES
--- ----------------------------
-
---TRUNCATE TABLE HF_JOB DROP STORAGE;
-
---TRUNCATE TABLE HF_JOB DROP STORAGE;
-
---TRUNCATE TABLE HF_COUNTER DROP STORAGE;
-
---TRUNCATE TABLE HF_AGGREGATED_COUNTER DROP STORAGE;
-
---TRUNCATE TABLE HF_DISTRIBUTED_LOCK DROP STORAGE;
-
---TRUNCATE TABLE HF_HASH DROP STORAGE;
-
---TRUNCATE TABLE HF_JOB_PARAMETER DROP STORAGE;
-
---TRUNCATE TABLE HF_JOB_QUEUE DROP STORAGE;
-
---TRUNCATE TABLE HF_JOB_STATE DROP STORAGE;
-
---TRUNCATE TABLE HF_SERVER DROP STORAGE;
-
---TRUNCATE TABLE HF_SET DROP STORAGE;
-
---TRUNCATE TABLE HF_LIST DROP STORAGE;
-
--- ----------------------------
--- DROP TABLES and SEQUENCES
--- ----------------------------
-
---DROP TABLE HF_JOB CASCADE CONSTRAINTS PURGE;
-
---DROP TABLE HF_COUNTER CASCADE CONSTRAINTS PURGE;
-
---DROP TABLE HF_AGGREGATED_COUNTER CASCADE CONSTRAINTS PURGE;
-
---DROP TABLE HF_DISTRIBUTED_LOCK CASCADE CONSTRAINTS PURGE;
-
---DROP TABLE HF_HASH CASCADE CONSTRAINTS PURGE;
-
---DROP TABLE HF_JOB_PARAMETER CASCADE CONSTRAINTS PURGE;
-
---DROP TABLE HF_JOB_QUEUE CASCADE CONSTRAINTS PURGE;
-
---DROP TABLE HF_JOB_STATE CASCADE CONSTRAINTS PURGE;
-
---DROP TABLE HF_SERVER CASCADE CONSTRAINTS PURGE;
-
---DROP TABLE HF_SET CASCADE CONSTRAINTS PURGE;
-
---DROP TABLE HF_LIST CASCADE CONSTRAINTS PURGE;
-
---DROP SEQUENCE HF_SEQUENCE;
-
---DROP SEQUENCE HF_JOB_ID_SEQ;
-
--- ----------------------------
--- CREATE, ALTER TABLES and CREATE SEQUENCES
--- ----------------------------
-
-CREATE SEQUENCE HF_SEQUENCE START WITH 1 MAXVALUE 9999999999999999999999999999 MINVALUE 1 NOCYCLE CACHE 20 NOORDER;
+﻿CREATE SEQUENCE HF_SEQUENCE START WITH 1 MAXVALUE 9999999999999999999999999999 MINVALUE 1 NOCYCLE CACHE 20 NOORDER;
 
 CREATE SEQUENCE HF_JOB_ID_SEQ START WITH 1 MAXVALUE 9999999999999999999999999999 MINVALUE 1 NOCYCLE CACHE 20 NOORDER;
-
--- ----------------------------
--- Table structure for `Job`
--- ----------------------------
 
 CREATE TABLE HF_JOB (ID                NUMBER (10)
                          ,STATE_ID          NUMBER (10)
@@ -96,11 +30,6 @@ ALTER TABLE HF_JOB ADD (
   (ID)
   USING INDEX
   ENABLE VALIDATE);
-
-
--- ----------------------------
--- Table structure for `Counter`
--- ----------------------------
 
 CREATE TABLE HF_COUNTER (ID          NUMBER (10)
                              ,KEY         NVARCHAR2 (255)
@@ -138,22 +67,12 @@ ALTER TABLE HF_AGGREGATED_COUNTER ADD (
   USING INDEX
   ENABLE VALIDATE);
 
-
--- ----------------------------
--- Table structure for `DistributedLock`
--- ----------------------------
-
 CREATE TABLE HF_DISTRIBUTED_LOCK ("RESOURCE" NVARCHAR2 (100), CREATED_AT TIMESTAMP (4))
 LOGGING
 NOCOMPRESS
 NOCACHE
 NOPARALLEL
 MONITORING;
-
-
--- ----------------------------
--- Table structure for `Hash`
--- ----------------------------
 
 CREATE TABLE HF_HASH (ID          NUMBER (10)
                           ,KEY         NVARCHAR2 (255)
@@ -179,11 +98,6 @@ ALTER TABLE HF_HASH ADD (
   UNIQUE (KEY, FIELD)
   USING INDEX
   ENABLE VALIDATE);
-
-
--- ----------------------------
--- Table structure for `JobParameter`
--- ----------------------------
 
 CREATE TABLE HF_JOB_PARAMETER (ID       NUMBER (10)
                                    ,NAME     NVARCHAR2 (40)
@@ -212,11 +126,6 @@ ALTER TABLE HF_JOB_PARAMETER ADD (
   REFERENCES HF_JOB (ID)
   ENABLE VALIDATE);
 
-
--- ----------------------------
--- Table structure for `JobQueue`
--- ----------------------------
-
 CREATE TABLE HF_JOB_QUEUE (ID            NUMBER (10)
                                ,JOB_ID        NUMBER (10)
                                ,QUEUE         NVARCHAR2 (50)
@@ -239,11 +148,6 @@ ALTER TABLE HF_JOB_QUEUE ADD (
   FOREIGN KEY (JOB_ID)
   REFERENCES HF_JOB (ID)
   ENABLE VALIDATE);
-
-
--- ----------------------------
--- Table structure for `JobState`
--- ----------------------------
 
 CREATE TABLE HF_JOB_STATE (ID           NUMBER (10)
                                ,JOB_ID       NUMBER (10)
@@ -274,11 +178,6 @@ ALTER TABLE HF_JOB_STATE ADD (
   REFERENCES HF_JOB (ID)
   ENABLE VALIDATE);
 
-
--- ----------------------------
--- Table structure for `Server`
--- ----------------------------
-
 CREATE TABLE HF_SERVER (ID NVARCHAR2 (100), DATA NCLOB, LAST_HEART_BEAT TIMESTAMP (4))
 LOB (DATA) STORE AS BASICFILE
    (ENABLE STORAGE IN ROW
@@ -296,11 +195,6 @@ ALTER TABLE HF_SERVER ADD (
   (ID)
   USING INDEX
   ENABLE VALIDATE);
-
-
--- ----------------------------
--- Table structure for `Set`
--- ----------------------------
 
 CREATE TABLE HF_SET (ID          NUMBER (10)
                          ,KEY         NVARCHAR2 (255)
