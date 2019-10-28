@@ -85,5 +85,75 @@ More info: [Hangfire Overview](http://hangfire.io/overview.html#integrated-monit
 ## Build
 Please use Visual Studio or any other tool of your choice to build the solution.
 
-## Known Issues
+<strike>## Known Issues</strike>
 <strike>Currently Install.sql is not deployed if DB objects are not existing. As a workaround run your scripts in database and give CRUD grants to the user that is given in connection string.</strike>
+
+## Fixed
+
+## 1) OracleObjectsInstaller Class:
+
+<pre>
+        public static void Install(IDbConnection connection, string schemaName)
+        {
+            if (connection == null) throw new ArgumentNullException(nameof(connection));
+
+            if (TablesExists(connection, schemaName))
+            {
+                Log.Info("DB tables already exist. Exit install");
+                return;
+            }
+
+            Log.Info("Start installing Hangfire SQL objects...");
+
+            try
+            {
+                InstallationFromFile(connection);
+            }
+            catch (Exception ex)
+            {
+                InstallationFromCode(connection);
+                Log.ErrorException(ex.Message, ex);
+            }
+
+            Log.Info("Hangfire SQL objects installed.");
+        }
+</pre>
+
+## 2) OracleStorage Class:
+
+<pre>
+        internal IDbConnection CreateAndOpenConnection()
+        {
+            var connection = _connectionFactory != null ? _connectionFactory() : new OracleConnection(_connectionString);
+
+            if (connection.State == ConnectionState.Closed)
+            {
+                var retries = 3;
+
+                while ((retries >= 0) && (connection.State != ConnectionState.Open))
+                {
+                    try
+                    {
+                        connection.Open();
+                        retries--;
+                    }
+                    catch (Exception ex)
+                    {
+                        ReleaseConnection(connection);
+
+                        connection = new OracleConnection(_connectionString);
+                        connection.Open();
+
+                        Logger.ErrorException(ex.Message, ex);
+                    }
+                }
+
+                if (!string.IsNullOrWhiteSpace(_options.SchemaName))
+                {
+                    connection.Execute($"ALTER SESSION SET CURRENT_SCHEMA={_options.SchemaName}");
+                }
+            }
+
+            return connection;
+        }
+</pre>  
