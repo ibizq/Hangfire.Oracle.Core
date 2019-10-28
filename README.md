@@ -88,9 +88,9 @@ Please use Visual Studio or any other tool of your choice to build the solution.
 ## Known Issues
 <strike>Currently Install.sql is not deployed if DB objects are not existing. As a workaround run your scripts in database and give CRUD grants to the user that is given in connection string.</strike>
 
-## Fixed
+## Fixed Installation Issues and Connection Issues
 
-## 1) OracleObjectsInstaller Class:
+## 1) OracleObjectsInstaller class:
 
 <pre>
         public static void Install(IDbConnection connection, string schemaName)
@@ -107,11 +107,13 @@ Please use Visual Studio or any other tool of your choice to build the solution.
 
             try
             {
-                InstallationFromFile(connection);
+                InstallFromSqlFile(connection);
             }
             catch (Exception ex)
             {
-                InstallationFromCode(connection);
+                DropFromSqlFile(connection);
+                InstallFromSqlCommands(connection);
+                
                 Log.ErrorException(ex.Message, ex);
             }
 
@@ -119,7 +121,7 @@ Please use Visual Studio or any other tool of your choice to build the solution.
         }
 </pre>
 
-## 2) OracleStorage Class:
+## 2) OracleStorage class:
 
 <pre>
         internal IDbConnection CreateAndOpenConnection()
