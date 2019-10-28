@@ -209,7 +209,25 @@ namespace Hangfire.Oracle.Core
 
             if (connection.State == ConnectionState.Closed)
             {
-                connection.Open();
+                var retries = 3;
+
+                while ((retries >= 0) && (connection.State != ConnectionState.Open))
+                {
+                    try
+                    {
+                        connection.Open();
+                        retries--;
+                    }
+                    catch (Exception ex)
+                    {
+                        ReleaseConnection(connection);
+
+                        connection = new OracleConnection(_connectionString);
+                        connection.Open();
+
+                        Logger.ErrorException(ex.Message, ex);
+                    }
+                }
 
                 if (!string.IsNullOrWhiteSpace(_options.SchemaName))
                 {
@@ -222,10 +240,17 @@ namespace Hangfire.Oracle.Core
 
         internal void ReleaseConnection(IDbConnection connection)
         {
+            if (connection?.State != ConnectionState.Closed)
+            {
+                connection?.Close();
+            }
+
             connection?.Dispose();
         }
+
         public void Dispose()
         {
+
         }
     }
 }
